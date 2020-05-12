@@ -1,6 +1,6 @@
 <?php
 /**
- * @author col.shrapnel@gmail.com
+ * @author col.shrapnel@gmail.com_
  * @link http://phpfaq.ru/safemysql
  * 
  * Safe and convenient way to handle SQL queries utilizing type-hinted placeholders.
