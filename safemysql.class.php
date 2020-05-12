@@ -7,7 +7,7 @@
  * 
  * Key features
  * - set of helper functions to get the desired result right out of query, like in PEAR::DB
- * - conditional query building using parse() method to build queries of whatever comlexity, 
+ * - conditional query building using parse() method to build queries of whatever complexity, 
  *   while keeping extra safety of placeholders
  * - type-hinted placeholders
  * 
@@ -21,7 +21,7 @@
  * ?s ("string")  - strings (also DATE, FLOAT and DECIMAL)
  * ?i ("integer") - the name says it all 
  * ?n ("name")    - identifiers (table and field names) 
- * ?a ("array")   - complex placeholder for IN() operator  (substituted with string of 'a','b','c' format, without parentesis)
+ * ?a ("array")   - complex placeholder for IN() operator  (substituted with string of 'a','b','c' format, without parenthesis)
  * ?u ("update")  - complex placeholder for SET operator (substituted with string of `field`='value',`field`='value' format)
  * and
  * ?p ("parsed") - special type placeholder, for inserting already parsed statements without any processing, to avoid double parsing.
@@ -47,22 +47,22 @@
  * Some examples:
  * 
  * $name = $db->getOne('SELECT name FROM table WHERE id = ?i',$_GET['id']);
- * $data = $db->getInd('id','SELECT * FROM ?n WHERE id IN ?a','table', array(1,2));
- * $data = $db->getAll("SELECT * FROM ?n WHERE mod=?s LIMIT ?i",$table,$mod,$limit);
+ * $data = $db->getInd('id','SELECT * FROM ?n WHERE id IN (?a)','table', array(1,2));
+ * $data = $db->getAll('SELECT * FROM ?n WHERE mod=?s LIMIT ?i',$table,$mod,$limit);
  *
- * $ids  = $db->getCol("SELECT id FROM tags WHERE tagname = ?s",$tag);
- * $data = $db->getAll("SELECT * FROM table WHERE category IN (?a)",$ids);
+ * $ids  = $db->getCol('SELECT id FROM tags WHERE tagname = ?s',$tag);
+ * $data = $db->getAll('SELECT * FROM table WHERE category IN (?a)',$ids);
  * 
  * $data = array('offers_in' => $in, 'offers_out' => $out);
- * $sql  = "INSERT INTO stats SET pid=?i,dt=CURDATE(),?u ON DUPLICATE KEY UPDATE ?u";
+ * $sql  = 'INSERT INTO stats SET pid=?i,dt=CURDATE(),?u ON DUPLICATE KEY UPDATE ?u';
  * $db->query($sql,$pid,$data,$data);
  * 
  * if ($var === NULL) {
- *     $sqlpart = "field is NULL";
+ *     $sqlpart = 'field is NULL';
  * } else {
- *     $sqlpart = $db->parse("field = ?s", $var);
+ *     $sqlpart = $db->parse('field = ?s', $var);
  * }
- * $data = $db->getAll("SELECT * FROM table WHERE ?p", $bar, $sqlpart);
+ * $data = $db->getAll('SELECT * FROM table WHERE ?p', $bar, $sqlpart);
  * 
  */
 
@@ -79,12 +79,12 @@ class SafeMySQL
 		'user'      => 'root',
 		'pass'      => '',
 		'db'        => 'test',
-		'port'      => NULL,
-		'socket'    => NULL,
-		'pconnect'  => FALSE,
+		'port'      => null,
+		'socket'    => null,
+		'pconnect'  => false,
 		'charset'   => 'utf8',
-		'errmode'   => 'exception', //or 'error'
-		'exception' => 'Exception', //Exception class name
+		'errmode'   => 'exception', // or 'error'
+		'exception' => 'Exception', // Exception class name
 	);
 
 	const RESULT_ASSOC = MYSQLI_ASSOC;
@@ -103,22 +103,20 @@ class SafeMySQL
 			{
 				$this->conn = $opt['mysqli'];
 				return;
-
 			} else {
-
-				$this->error("mysqli option must be valid instance of mysqli class");
+				$this->error('mysqli option must be valid instance of mysqli class');
 			}
 		}
 
 		if ($opt['pconnect'])
 		{
-			$opt['host'] = "p:".$opt['host'];
+			$opt['host'] = 'p:'.$opt['host'];
 		}
 
 		@$this->conn = mysqli_connect($opt['host'], $opt['user'], $opt['pass'], $opt['db'], $opt['port'], $opt['socket']);
 		if ( !$this->conn )
 		{
-			$this->error(mysqli_connect_errno()." ".mysqli_connect_error());
+			$this->error(mysqli_connect_errno().' '.mysqli_connect_error());
 		}
 
 		mysqli_set_charset($this->conn, $opt['charset']) or $this->error(mysqli_error($this->conn));
@@ -129,23 +127,23 @@ class SafeMySQL
 	 * Conventional function to run a query with placeholders. A mysqli_query wrapper with placeholders support
 	 * 
 	 * Examples:
-	 * $db->query("DELETE FROM table WHERE id=?i", $id);
+	 * $db->query('DELETE FROM table WHERE id=?i', $id);
 	 *
 	 * @param string $query - an SQL query with placeholders
 	 * @param mixed  $arg,... unlimited number of arguments to match placeholders in the query
-	 * @return resource|FALSE whatever mysqli_query returns
+	 * @return mysql_result|true whatever mysqli_query returns
 	 */
 	public function query()
-	{	
+	{
 		return $this->rawQuery($this->prepareQuery(func_get_args()));
 	}
 
 	/**
 	 * Conventional function to fetch single row. 
 	 * 
-	 * @param resource $result - myqli result
+	 * @param resource $result - mysqli result
 	 * @param int $mode - optional fetch mode, RESULT_ASSOC|RESULT_NUM, default RESULT_ASSOC
-	 * @return array|FALSE whatever mysqli_fetch_array returns
+	 * @return array|null whatever mysqli_fetch_array returns
 	 */
 	public function fetch($result,$mode=self::RESULT_ASSOC)
 	{
@@ -175,7 +173,7 @@ class SafeMySQL
 	/**
 	 * Conventional function to get number of rows in the resultset. 
 	 * 
-	 * @param resource $result - myqli result
+	 * @param resource $result - mysqli result
 	 * @return int whatever mysqli_num_rows returns
 	 */
 	public function numRows($result)
@@ -195,8 +193,8 @@ class SafeMySQL
 	 * Helper function to get scalar value right out of query and optional arguments
 	 * 
 	 * Examples:
-	 * $name = $db->getOne("SELECT name FROM table WHERE id=1");
-	 * $name = $db->getOne("SELECT name FROM table WHERE id=?i", $id);
+	 * $name = $db->getOne('SELECT name FROM table WHERE id=1');
+	 * $name = $db->getOne('SELECT name FROM table WHERE id=?i', $id);
 	 *
 	 * @param string $query - an SQL query with placeholders
 	 * @param mixed  $arg,... unlimited number of arguments to match placeholders in the query
@@ -204,46 +202,40 @@ class SafeMySQL
 	 */
 	public function getOne()
 	{
-		$query = $this->prepareQuery(func_get_args());
-		if ($res = $this->rawQuery($query))
-		{
-			$row = $this->fetch($res);
-			if (is_array($row)) {
-				return reset($row);
-			}
-			$this->free($res);
+		$res = $this->rawQuery($this->prepareQuery(func_get_args()));
+		$row = $this->fetch($res);
+		$this->free($res);
+		if (is_array($row)) {
+			return reset($row);
 		}
-		return FALSE;
+		return false;
 	}
 
 	/**
 	 * Helper function to get single row right out of query and optional arguments
 	 * 
 	 * Examples:
-	 * $data = $db->getRow("SELECT * FROM table WHERE id=1");
-	 * $data = $db->getRow("SELECT * FROM table WHERE id=?i", $id);
+	 * $data = $db->getRow('SELECT * FROM table WHERE id=1');
+	 * $data = $db->getRow('SELECT * FROM table WHERE id=?i', $id);
 	 *
 	 * @param string $query - an SQL query with placeholders
 	 * @param mixed  $arg,... unlimited number of arguments to match placeholders in the query
-	 * @return array|FALSE either associative array contains first row of resultset or FALSE if none found
+	 * @return array|null either associative array contains first row of resultset or null if none found
 	 */
 	public function getRow()
 	{
-		$query = $this->prepareQuery(func_get_args());
-		if ($res = $this->rawQuery($query)) {
-			$ret = $this->fetch($res);
-			$this->free($res);
-			return $ret;
-		}
-		return FALSE;
+		$res = $this->rawQuery($this->prepareQuery(func_get_args()));
+		$ret = $this->fetch($res);
+		$this->free($res);
+		return $ret;
 	}
 
 	/**
 	 * Helper function to get single column right out of query and optional arguments
 	 * 
 	 * Examples:
-	 * $ids = $db->getCol("SELECT id FROM table WHERE cat=1");
-	 * $ids = $db->getCol("SELECT id FROM tags WHERE tagname = ?s", $tag);
+	 * $ids = $db->getCol('SELECT id FROM table WHERE cat=1');
+	 * $ids = $db->getCol('SELECT id FROM tags WHERE tagname = ?s', $tag);
 	 *
 	 * @param string $query - an SQL query with placeholders
 	 * @param mixed  $arg,... unlimited number of arguments to match placeholders in the query
@@ -252,15 +244,12 @@ class SafeMySQL
 	public function getCol()
 	{
 		$ret   = array();
-		$query = $this->prepareQuery(func_get_args());
-		if ( $res = $this->rawQuery($query) )
+		$res = $this->rawQuery($this->prepareQuery(func_get_args()));
+		while ($row = $this->fetch($res))
 		{
-			while($row = $this->fetch($res))
-			{
-				$ret[] = reset($row);
-			}
-			$this->free($res);
+			$ret[] = reset($row);
 		}
+		$this->free($res);
 		return $ret;
 	}
 
@@ -268,8 +257,8 @@ class SafeMySQL
 	 * Helper function to get all the rows of resultset right out of query and optional arguments
 	 * 
 	 * Examples:
-	 * $data = $db->getAll("SELECT * FROM table");
-	 * $data = $db->getAll("SELECT * FROM table LIMIT ?i,?i", $start, $rows);
+	 * $data = $db->getAll('SELECT * FROM table');
+	 * $data = $db->getAll('SELECT * FROM table LIMIT ?i,?i', $start, $rows);
 	 *
 	 * @param string $query - an SQL query with placeholders
 	 * @param mixed  $arg,... unlimited number of arguments to match placeholders in the query
@@ -277,16 +266,13 @@ class SafeMySQL
 	 */
 	public function getAll()
 	{
-		$ret   = array();
-		$query = $this->prepareQuery(func_get_args());
-		if ( $res = $this->rawQuery($query) )
+		$ret = array();
+		$res = $this->rawQuery($this->prepareQuery(func_get_args()));
+		while ($row = $this->fetch($res))
 		{
-			while($row = $this->fetch($res))
-			{
-				$ret[] = $row;
-			}
-			$this->free($res);
+			$ret[] = $row;
 		}
+		$this->free($res);
 		return $ret;
 	}
 
@@ -294,8 +280,8 @@ class SafeMySQL
 	 * Helper function to get all the rows of resultset into indexed array right out of query and optional arguments
 	 * 
 	 * Examples:
-	 * $data = $db->getInd("id", "SELECT * FROM table");
-	 * $data = $db->getInd("id", "SELECT * FROM table LIMIT ?i,?i", $start, $rows);
+	 * $data = $db->getInd('id', 'SELECT * FROM table');
+	 * $data = $db->getInd('id', 'SELECT * FROM table LIMIT ?i,?i', $start, $rows);
 	 *
 	 * @param string $index - name of the field which value is used to index resulting array
 	 * @param string $query - an SQL query with placeholders
@@ -306,17 +292,14 @@ class SafeMySQL
 	{
 		$args  = func_get_args();
 		$index = array_shift($args);
-		$query = $this->prepareQuery($args);
 
 		$ret = array();
-		if ( $res = $this->rawQuery($query) )
+		$res = $this->rawQuery($this->prepareQuery($args));
+		while ($row = $this->fetch($res))
 		{
-			while($row = $this->fetch($res))
-			{
-				$ret[$row[$index]] = $row;
-			}
-			$this->free($res);
+			$ret[$row[$index]] = $row;
 		}
+		$this->free($res);
 		return $ret;
 	}
 
@@ -324,7 +307,7 @@ class SafeMySQL
 	 * Helper function to get a dictionary-style array right out of query and optional arguments
 	 * 
 	 * Examples:
-	 * $data = $db->getIndCol("name", "SELECT name, id FROM cities");
+	 * $data = $db->getIndCol('name', 'SELECT name, id FROM cities');
 	 *
 	 * @param string $index - name of the field which value is used to index resulting array
 	 * @param string $query - an SQL query with placeholders
@@ -335,19 +318,16 @@ class SafeMySQL
 	{
 		$args  = func_get_args();
 		$index = array_shift($args);
-		$query = $this->prepareQuery($args);
 
 		$ret = array();
-		if ( $res = $this->rawQuery($query) )
+		$res = $this->rawQuery($this->prepareQuery($args));
+		while ($row = $this->fetch($res))
 		{
-			while($row = $this->fetch($res))
-			{
-				$key = $row[$index];
-				unset($row[$index]);
-				$ret[$key] = reset($row);
-			}
-			$this->free($res);
+			$key = $row[$index];
+			unset($row[$index]);
+			$ret[$key] = reset($row);
 		}
+		$this->free($res);
 		return $ret;
 	}
 
@@ -361,13 +341,13 @@ class SafeMySQL
 	 * already parsed parts have to be added via ?p placeholder
 	 * 
 	 * Examples:
-	 * $query = $db->parse("SELECT * FROM table WHERE foo=?s AND bar=?s", $foo, $bar);
+	 * $query = $db->parse('SELECT * FROM table WHERE foo=?s AND bar=?s', $foo, $bar);
 	 * echo $query;
 	 * 
 	 * if ($foo) {
-	 *     $qpart = $db->parse(" AND foo=?s", $foo);
+	 *     $qpart = $db->parse(' AND foo=?s', $foo);
 	 * }
-	 * $data = $db->getAll("SELECT * FROM table WHERE bar=?s ?p", $bar, $qpart);
+	 * $data = $db->getAll('SELECT * FROM table WHERE bar=?s ?p', $bar, $qpart);
 	 *
 	 * @param string $query - whatever expression contains placeholders
 	 * @param mixed  $arg,... unlimited number of arguments to match placeholders in the expression
@@ -390,18 +370,18 @@ class SafeMySQL
 	 * if (!$order || !dir) {
 	 *     throw new http404(); //non-expected values should cause 404 or similar response
 	 * }
-	 * $sql  = "SELECT * FROM table ORDER BY ?p ?p LIMIT ?i,?i"
+	 * $sql  = 'SELECT * FROM table ORDER BY ?p ?p LIMIT ?i,?i'
 	 * $data = $db->getArr($sql, $order, $dir, $start, $per_page);
 	 * 
-	 * @param string $iinput   - field name to test
+	 * @param string $input   - field name to test
 	 * @param  array  $allowed - an array with allowed variants
 	 * @param  string $default - optional variable to set if no match found. Default to false.
 	 * @return string|FALSE    - either sanitized value or FALSE
 	 */
-	public function whiteList($input,$allowed,$default=FALSE)
+	public function whiteList($input,$allowed,$default=false)
 	{
 		$found = array_search($input,$allowed);
-		return ($found === FALSE) ? $default : $allowed[$found];
+		return ($found === false) ? $default : $allowed[$found];
 	}
 
 	/**
@@ -413,7 +393,7 @@ class SafeMySQL
 	 * Example:
 	 * $allowed = array('title','url','body','rating','term','type');
 	 * $data    = $db->filterArray($_POST,$allowed);
-	 * $sql     = "INSERT INTO ?n SET ?u";
+	 * $sql     = 'INSERT INTO ?n SET ?u';
 	 * $db->query($sql,$table,$data);
 	 * 
 	 * @param  array $input   - source array
@@ -458,13 +438,13 @@ class SafeMySQL
 	 * also logs some stats like profiling info and error message
 	 * 
 	 * @param string $query - a regular SQL query
-	 * @return mysqli result resource or FALSE on error
+	 * @return mysqli_result|true result or true if query not provides a result
 	 */
 	protected function rawQuery($query)
 	{
-		$start = microtime(TRUE);
+		$start = microtime(true);
 		$res   = mysqli_query($this->conn, $query);
-		$timer = microtime(TRUE) - $start;
+		$timer = microtime(true) - $start;
 
 		$this->stats[] = array(
 			'query' => $query,
@@ -535,14 +515,14 @@ class SafeMySQL
 
 	protected function escapeInt($value)
 	{
-		if ($value === NULL)
+		if ($value === null)
 		{
 			return 'NULL';
 		}
 		if(!is_numeric($value))
 		{
-			$this->error("Integer (?i) placeholder expects numeric value, ".gettype($value)." given");
-			return FALSE;
+			$this->error('Integer (?i) placeholder expects numeric value, '.gettype($value).' given');
+			return false;
 		}
 		if (is_float($value))
 		{
@@ -553,20 +533,20 @@ class SafeMySQL
 
 	protected function escapeString($value)
 	{
-		if ($value === NULL)
+		if ($value === null)
 		{
 			return 'NULL';
 		}
-		return	"'".mysqli_real_escape_string($this->conn,$value)."'";
+		return	'\''.mysqli_real_escape_string($this->conn,$value).'\'';
 	}
 
 	protected function escapeIdent($value)
 	{
 		if ($value)
 		{
-			return "`".str_replace("`","``",$value)."`";
+			return '`'.str_replace('`','``',$value).'`';
 		} else {
-			$this->error("Empty value for identifier (?n) placeholder");
+			$this->error('Empty value for identifier (?n) placeholder');
 		}
 	}
 
@@ -574,7 +554,7 @@ class SafeMySQL
 	{
 		if (!is_array($data))
 		{
-			$this->error("Value for IN (?a) placeholder should be array");
+			$this->error('Value for IN (?a) placeholder should be array');
 			return;
 		}
 		if (!$data)
@@ -585,7 +565,7 @@ class SafeMySQL
 		foreach ($data as $value)
 		{
 			$query .= $comma.$this->escapeString($value);
-			$comma  = ",";
+			$comma  = ',';
 		}
 		return $query;
 	}
@@ -594,30 +574,30 @@ class SafeMySQL
 	{
 		if (!is_array($data))
 		{
-			$this->error("SET (?u) placeholder expects array, ".gettype($data)." given");
+			$this->error('SET (?u) placeholder expects array, '.gettype($data).' given');
 			return;
 		}
 		if (!$data)
 		{
-			$this->error("Empty array for SET (?u) placeholder");
+			$this->error('Empty array for SET (?u) placeholder');
 			return;
 		}
 		$query = $comma = '';
 		foreach ($data as $key => $value)
 		{
 			$query .= $comma.$this->escapeIdent($key).'='.$this->escapeString($value);
-			$comma  = ",";
+			$comma  = ',';
 		}
 		return $query;
 	}
 
 	protected function error($err)
 	{
-		$err  = __CLASS__.": ".$err;
+		$err  = __CLASS__.': '.$err;
 
 		if ( $this->emode == 'error' )
 		{
-			$err .= ". Error initiated in ".$this->caller().", thrown";
+			$err .= '. Error initiated in '.$this->caller().', thrown';
 			trigger_error($err,E_USER_ERROR);
 		} else {
 			throw new $this->exname($err);
@@ -632,7 +612,7 @@ class SafeMySQL
 		{
 			if ( isset($t['class']) && $t['class'] == __CLASS__ )
 			{
-				$caller = $t['file']." on line ".$t['line'];
+				$caller = $t['file'].' on line '.$t['line'];
 			} else {
 				break;
 			}
@@ -641,7 +621,7 @@ class SafeMySQL
 	}
 
 	/**
-	 * On a long run we can eat up too much memory with mere statsistics
+	 * On a long run we can eat up too much memory with mere statistics
 	 * Let's keep it at reasonable size, leaving only last 100 entries.
 	 */
 	protected function cutStats()
