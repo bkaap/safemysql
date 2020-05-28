@@ -22,15 +22,15 @@
  * ?i ("integer")             - integers
  * ?n ("name")                - identifiers (table and field names)
  * ?a ("array")               - complex placeholder for IN () clauses (expects an array of values; the
- *                                    placeholder will be substituted for a string in 'a','b','c' format, without
- *                                    parenthesis)
+ *                              placeholder will be substituted for a string in 'a','b','c' format, without
+ *                              parenthesis)
  * ?u ("update")              - complex placeholder for SET clauses (expects an associative array mapping field
- *                                    names to values; the placeholder will be substituted for a string in
- *                                    `field` ='value', `field` ='value' format)
+ *                              names to values; the placeholder will be substituted for a string in
+ *                              `field` ='value', `field` ='value' format)
  * ?m ("multi-row")           - complex placeholder for bulk INSERT queries with a VALUES clause. Expects an
- *                                    array of arrays, with the child arrays representing rows to be inserted. The
- *                                    placeholder will be substituted for a string in ('a', 'b', 'c'), ('e', 'f', 'g')
- *                                    format.
+ *                              array of arrays, with the child arrays representing rows to be inserted. The
+ *                              placeholder will be substituted for a string in ('a', 'b', 'c'), ('e', 'f', 'g')
+ *                              format.
  * ?k ("key/value multi-row") - another complex placeholder for INSERT queries with VALUES clauses. Expects an array of
  *                              associative arrays, with the associative arrays representing the rows to be inserted as
  *                              field => value mappings. The placeholder will be substituted for a string like
@@ -96,7 +96,6 @@
 
 class SafeMySQL
 {
-
 	protected $conn;
 	protected $stats;
 	protected $emode;
@@ -120,7 +119,12 @@ class SafeMySQL
 
 	function __construct($opt = array())
 	{
-		$opt = array_merge($this->defaults,$opt);
+		$ini_path = __DIR__ . '/safeMySql.ini';
+		if (is_file($ini_path))
+			$ini = parse_ini_file($ini_path);
+		else
+			$ini = array();
+		$opt = array_merge($this->defaults, $ini, $opt);
 
 		$this->emode  = $opt['errmode'];
 		$this->exname = $opt['exception'];
