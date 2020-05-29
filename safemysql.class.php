@@ -125,6 +125,7 @@ class SafeMySQL
 		else
 			$ini = array();
 		$opt = array_merge($this->defaults, $ini, $opt);
+		if (isset($opt['db_prefix'])) $opt['db'] = $opt['db_prefix'] . $opt['db'];
 
 		$this->emode  = $opt['errmode'];
 		$this->exname = $opt['exception'];
